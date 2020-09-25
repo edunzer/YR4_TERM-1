@@ -1,0 +1,15 @@
+## DISCUSSION LEGAL ENVIRONMENT
+
+Hi everyone. My name is Ethan I am a junior at Oregon tech, and I am studying Information and Technology. This means that I will be going into the tech field; more specifically Web marketing, email marketing, and Web development. As far as information about me, I grew up in Lake Oswego (Portland) and moved to Bend 3 years ago but am hoping to move back as soon as possible. You can probably guess that I like computers but I also like working on my car and cooking.
+
+Sources of Law:
+
+Constitution: First off we have the Constitution, which could be referred to as the king of all sources of Law in the United States. It is comprised of amendments that offer protections of peoples rights, along with restrictions. Not only does it give rights but it also restricts rights of certain government powers. This document empowers federal law buy giving congress the power to enact statues.
+
+Federal Law: As stated above the constitution creates federal law and is the all mighty controller of the United States law system. How ever federal law is not without limits, since states each have their own constitution and are considered independent. So federal law may only overrule state law if it is in the means of the limited powers that is granted by congress in the constitution. But a number of federal and state laws exist side by side in areas such as antitrust, trademarks, employment, etc. that have been adopted as the "standards" for all states to equally enforce. An example of federal law would be immigration and citizenship laws that cannot be handled at a state level and are instead taken care of through the federal law because its a United States issue not a state level issue set about by the constitution.
+
+State Law: State Law is created to give each state the power to differ from one another. Now although there law cannot extend past federal it does enable them to create state legislation that relates to matters that do not concern the federal government.
+
+Regulations: Law and regulations are very different from one another but regulations do rely on law. regulations are standards/rules that are created/adopted by agencies that govern how laws are enforced. So although they are not like typical law that is approved by congress they are in power by the agencies that have the enforcement of law. Example being the EPA (Environmental Protection Agency) which establishes regulations for businesses and there possible pollutants to the environment. The EPA can enforce there regulations when a business violates them despite them not being a "law".
+
+Based on the reading it seems that when concerning what source of law rules over a certain issue you go down the line of sources. So Constitution/federal being first, then Common law third, then State third, etc. Considering that each level seems to have a document to talk about said regulations it seems self explanatory that in order to know which has power all you have to do is look. But whether or not the current levels of law is right or not is an entirely different issue. 
