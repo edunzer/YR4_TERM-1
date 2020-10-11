@@ -1,4 +1,4 @@
-## DISCUSSION THE CONSTITUTION
+## DISCUSSION | THE CONSTITUTION
 
 Why would a local company not want the federal government to make a law that applies to all states?
   - Because they could be operating a business that violates that federal law, but does not violate the local or state law. Also they would have no choice but to go along with that has been passed at that federal level. The only option would be to move to a another country that doesn't have as many law restricting your business. This issue is why many people think that each state should have more power and take up a lot of what the federal government has enforced, so that if you do not like what laws are in your state then you can just go somewhere else. The major problem with that is then borders between states, since one state might not like the rules that are in the state next to them.

@@ -1,4 +1,4 @@
-## INDIVIDUAL ASSIGNEMTN BUSINESS FORMATION
+## INDIVIDUAL ASSIGNMENT | BUSINESS FORMATION
 
 Now that we have learned about the different business forms, let's apply these concepts to some business scenarios.  Be sure to give your reasons for your answers in about 300 words:
 

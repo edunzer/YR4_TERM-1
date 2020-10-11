@@ -1,4 +1,4 @@
-## INDIVIDUAL ASSIGNMENT EMPLOYMENT LAW
+## INDIVIDUAL ASSIGNMENT | EMPLOYMENT LAW
 
 How does an employer decide to pay an employee a salary or hourly?  Provide an example of positions that might be paid salary and hourly?
   - The classification of the job is a big part in deciding what the type of payment will be. Since there are rules and regulations that go along with employees and how much there entitled to work and be payed for that work the choice on what kind of payment is also outlined. Hourly workers are often time based jobs where your pay is determined on how much time you work. So often manual labor, customer service, and food service take up the large portion of this type. The other option is an exempt employee which is referred to in the rules in regulations as a salary position that does not define there pay by there hourly work. Instead this is a set amount of money that is given to an employee in an agreement for there services. Often these positions are higher paying and also degree based jobs that are of a executive or administrative nature.

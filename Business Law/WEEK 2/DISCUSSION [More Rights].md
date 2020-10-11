@@ -1,4 +1,4 @@
-## DISCUSSION MORE RIGHTS
+## DISCUSSION | MORE RIGHTS
 
 What are some other rights do you have that surprised you? Are there limitations?
   - None of the rights that US citizens surprised me, the thing that does surprise me is that there are still so few and in such short sentences that can be construed into different meanings. Many of the amendments listed not only can be seen from different angles but also have been used in such way to get around rules that were put in place.
@@ -13,4 +13,4 @@ How about privacy in an employment setting?  Do we have privacy rights while wor
 
   - (Not sure what privacy we are really talking about though. If its simple things like desks and devices the simple answer should be that its the businesses property and they can do what they want.)
 
-  - Although the states have most of the control there are some limits to the business that do not come from the state. employees have the right to keep private facts confidential, along with having the right to personal space. If an employer discloses private facts or lies about an employee they can be held accountable. 
+  - Although the states have most of the control there are some limits to the business that do not come from the state. employees have the right to keep private facts confidential, along with having the right to personal space. If an employer discloses private facts or lies about an employee they can be held accountable.
