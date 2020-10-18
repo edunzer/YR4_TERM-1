@@ -24,6 +24,8 @@ Based on your results from Part One, answer the following questions in your lab 
 
   a.  Explain what the filter is doing and explain the purpose of an HTTP GET packet.
 
+  `The filter is finding all the packets that are going to the 80 port.`
+
 2.  Find the HTTP/1.1 packet that sends the GET request to retrieve www.indofolio.com (Links to an external site.).
 
   a.  What packet number is the GET packet?
