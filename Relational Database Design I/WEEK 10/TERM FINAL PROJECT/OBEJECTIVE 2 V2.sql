@@ -60,12 +60,6 @@ GO;
 
 -- VIEWS --
 
-CREATE VIEW EmployeeTaskCompleteionReview AS
-SELECT WorkerAccountID, Name, (SELECT WorkerAccountID, COUNT(*) FROM TaskList GROUP BY WorkerAccountID) AS TaskCount
-FROM WorkerAccounts INNER JOIN WorkerAccounts.WorkerAccountID = TaskList.WorkerAccountID
-WHERE Status = 'Completed'
-ORDER BY TaskCount;
-
 CREATE VIEW TaskByDepartment AS
 SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate
 FROM TaskList
@@ -105,6 +99,12 @@ SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, Work
 FROM TaskList
 WHERE Status = 'Completed'
 ORDER BY DepartmentID, CreationDate;
+
+CREATE VIEW EmployeeTaskCompleteionReview AS
+SELECT WorkerAccountID, Name, (SELECT WorkerAccountID, COUNT(*) FROM TaskList GROUP BY WorkerAccountID) AS TaskCount
+FROM WorkerAccounts INNER JOIN WorkerAccounts.WorkerAccountID = TaskList.WorkerAccountID
+WHERE Status = 'Completed'
+ORDER BY TaskCount;
 
 
 -- SEQUENCES --
