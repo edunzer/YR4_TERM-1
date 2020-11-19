@@ -1,6 +1,6 @@
 USE TermProjectDatabase;
 
--- TABLES --
+-- TABLES ----------------------------------------------------------------------------------------------------------
 
 CREATE TABLE BusinessAccounts (
   BusinessAccountID INT PRIMARY KEY,
@@ -13,7 +13,7 @@ CREATE TABLE BusinessAccounts (
 );
 
 CREATE TABLE WorkerAccounts (
-  WorkerAccountID INT PRIMARY KEY,
+  WorkerAccountID VARCHAR(50) PRIMARY KEY,
   Name VARCHAR(50),
   Role VARCHAR(50),
   Email VARCHAR(50),
@@ -24,8 +24,8 @@ CREATE TABLE WorkerAccounts (
 
 CREATE TABLE Administrators(
   AdministratorAccountID INT PRIMARY KEY,
-  WorkerAccountID INT NOT NULL,
-  Name VARCHAR(50)
+  WorkerAccountID VARCHAR(50) NOT NULL,
+  Name VARCHAR(50),
   Role VARCHAR(50),
   Email VARCHAR(50),
   Phone INT,
@@ -48,17 +48,40 @@ CREATE TABLE TaskList(
   Status ENUM('IceBox','Emergency','InProgress','Testing','Completed') DEFAULT 'IceBox' NOT NULL,
   ClaimedStatus BIT DEFAULT 0, -- BIT = 1, 0, or NULL so yes or no
   DepartmentID INT,
-  WorkerAccountID INT NOT NULL, -- ADD trigger to grab the AccountID of person who creates this task
+  WorkerAccountID VARCHAR(50) NOT NULL,
   BusinessAccountID INT NOT NULL,
   CreationDate DATE NOT NULL
 );
+
+CREATE TABLE TaskListAuditLog(
+  TaskID INT PRIMARY KEY,
+  CreatedBy VARCHAR(50) NOT NULL,
+  CreationDate DATE NOT NULL,
+  DeletedDate DATE NOT NULL,
+  DeletedBy VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE DeletedTaskList(
+  TaskID INT PRIMARY KEY,
+  TaskName VARCHAR(50) PRIMARY KEY,
+  Description VARCHAR(50),
+  CompletionDate DATE,
+  Status ENUM('IceBox','Emergency','InProgress','Testing','Completed') DEFAULT 'IceBox' NOT NULL,
+  ClaimedStatus BIT DEFAULT 0, -- BIT = 1, 0, or NULL so yes or no
+  DepartmentID INT,
+  WorkerAccountID INT NOT NULL,
+  BusinessAccountID VARCHAR(50) NOT NULL,
+  CreationDate DATE NOT NULL,
+  DeletedBy VARCHAR(50)
+);
+
 
 ALTER TABLE TaskList ADD CONSTRAINT
 DefaultDateInsert DEFAULT GETDATE() FOR CreationDate
 GO;
 
 
--- VIEWS --
+-- VIEWS ----------------------------------------------------------------------------------------------------------
 
 CREATE VIEW TaskByDepartment AS
 SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate
@@ -100,14 +123,12 @@ FROM TaskList
 WHERE Status = 'Completed'
 ORDER BY DepartmentID, CreationDate;
 
-CREATE VIEW EmployeeTaskCompleteionReview AS
-SELECT WorkerAccountID, Name, (SELECT WorkerAccountID, COUNT(*) FROM TaskList GROUP BY WorkerAccountID) AS TaskCount
-FROM WorkerAccounts INNER JOIN WorkerAccounts.WorkerAccountID = TaskList.WorkerAccountID
-WHERE Status = 'Completed'
-ORDER BY TaskCount;
+CREATE VIEW EmployeeTaskCompletionReview AS
+SELECT FnEmployeeTaskCompletionReview('Completed')
+FROM TaskList
 
 
--- SEQUENCES --
+-- SEQUENCES ----------------------------------------------------------------------------------------------------------
 
 CREATE SEQUENCE WorkerAccountIDSeq
 START WITH MAX(WorkerAccountID) + 1
@@ -135,8 +156,9 @@ INCREMENT BY 1
 CACHE 10000;
 
 
--- TRIGGERS --
+-- TRIGGERS ----------------------------------------------------------------------------------------------------------
 
+-- TRIGGER to change the value of WorkerAccountID
 CREATE OR REPLACE TRIGGER TrgWorkerAccountID
 BEFORE INSERT ON WorkerAccounts
 FOR EACH ROW
@@ -144,6 +166,7 @@ BEGIN
 :new.WorkerAccountID:=WorkerAccountIDSeq.nextval;
 END;
 
+-- TRIGGER to change the value of BusinessAccountID
 CREATE OR REPLACE TRIGGER TrgBusinessAccountID
 BEFORE INSERT ON BusinessAccounts
 FOR EACH ROW
@@ -151,6 +174,7 @@ BEGIN
 :new.BusinessAccountID:=BusinessAccountIDSeq.nextval;
 END;
 
+-- TRIGGER to change the value of AdministratorAccountID
 CREATE OR REPLACE TRIGGER TrgAdministratorAccountID
 BEFORE INSERT ON Administrators
 FOR EACH ROW
@@ -158,6 +182,7 @@ BEGIN
 :new.AdministratorAccountID:=AdministratorAccountIDSeq.nextval;
 END;
 
+-- TRIGGER to change the value of DepartmentAccountID
 CREATE OR REPLACE TRIGGER TrgDepartmentAccountID
 BEFORE INSERT ON Departments
 FOR EACH ROW
@@ -165,6 +190,7 @@ BEGIN
 :new.DepartmentAccountID:=DepartmentAccountIDSeq.nextval;
 END;
 
+-- TRIGGER to change the value of TaskID
 CREATE OR REPLACE TRIGGER TrgTaskID
 BEFORE INSERT ON TaskList
 FOR EACH ROW
@@ -172,6 +198,7 @@ BEGIN
 :new.TaskID:=TaskIDSeq.nextval;
 END;
 
+-- TRIGGER to set the ClaimedStatus to 1 when a new task is created and has a status that is not IceBox or Emergency.
 CREATE TRIGGER TrgClaimedStatus
 ON TaskList AFTER UPDATE AS
 BEGIN
@@ -179,6 +206,7 @@ SET ClaimedStatus = 1
 WHERE Status != 'IceBox' OR Status != 'Emergency'
 END;
 
+-- TRIGGER to record the CompletionDate of a task when the status is changed to Completed.
 CREATE TRIGGER TrgCompletionDate
 ON TaskList AFTER UPDATE AS
 BEGIN
@@ -187,11 +215,65 @@ UPDATE A
 SET CompletionDate = CONVERT(DATE, @DateTime)
 FROM TaskList AS A
 WHERE Status = 'Completed';
-END
-GO;
+END;
+
+-- TRIGGER to record the TaskID, DeletedDate, and who deleted said task. Inserts into TaskListAuditLog table
+CREATE TRIGGER TrgTaskDelete
+ON TaskList AFTER DELETE AS
+BEGIN
+DECLARE vUser varchar(50);
+SELECT USER() INTO vUser;
+INSERT INTO TaskListAuditLog
+(TaskID,DeletedDate,DeletedBy)
+VALUES(OLD.TaskID, SYSDATE(),vUser );
+END;
+
+-- TRIGGER to record the TaskID, CreationDate, and who created said task. Inserts into TaskListAuditLog table
+CREATE TRIGGER TrgTaskCreate
+ON TaskList AFTER INSERT AS
+BEGIN
+DECLARE vUser varchar(50);
+SELECT USER() INTO vUser;
+INSERT INTO TaskListAuditLog
+(TaskID,CreationDate,CreatedBy)
+VALUES(NEW.TaskID, SYSDATE(),vUser );
+END;
+
+-- TRIGGER to record who created a task.
+CREATE TRIGGER TrgWorkerTaskCreation
+BEFORE INSERT ON TaskList FOR EACH ROW
+BEGIN
+SELECT USER() INTO vUser;
+INSERT INTO TaskList(WorkerAccountID)
+VALUES(vUser);
+END;
+
+-- TRIGGER to move task to DeletedTaskList and add DeletedBy.
+CREATE TRIGGER TrgTaskDeleteMove
+ON TaskList AFTER DELETE AS
+BEGIN TRANSACTION
+
+BEGIN TRY
+INSERT INTO DeletedTaskList (TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate)
+SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate
+FROM TaskList
+END TRY
+
+BEGIN TRY
+SELECT USER() INTO vUser
+INSERT INTO DeletedTaskList(DeletedBy)
+VALUES(vUser)
+END TRY
+COMMIT TRANSACTION
+
+BEGIN CATCH
+THROW 51000, 'The records do not exist.', 1;
+ROLLBACK TRANSACTION
+END CATCH;
 
 
--- INDEXES --
+
+-- INDEXES ----------------------------------------------------------------------------------------------------------
 
 CREATE INDEX IdxCompleted
 ON TaskList (Status)
@@ -217,7 +299,7 @@ CREATE INDEX IdxWorkers
 ON TaskList (WorkerAccountID, Name)
 
 
--- INSERTS --
+-- INSERTS ----------------------------------------------------------------------------------------------------------
 
 INSERT INTO BusinessAccounts VALUES
 (1, 'Garment Tech', '121 Randall Mill Drive', 'Lagrange', 60172, 508-540-6742),
@@ -226,15 +308,19 @@ INSERT INTO BusinessAccounts VALUES
 (4, 'Squared Shop', '7845 Old 53rd Drive', 'Monsey', 33160, 720-293-4404);
 
 INSERT INTO WorkerAccounts VALUES
-(1, 'Roberta', 'Future Tactics Specialist', '2amine@acmta.com', 662-237-7348,),
-(2, 'Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', 870-324-9552,),
-(3, 'Eugene', 'Customer Infrastructure Producer', 'omahmad19r@policity.ml', 330-305-4924,),
-(4, 'Jacob', 'Legacy Identity Technician', 'vridwan.widanj@bvzoonm.com', 469-414-1852,);
+(1, 'Roberta', 'Future Tactics Specialist', '2amine@acmta.com', 662-237-7348),
+(2, 'Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', 870-324-9552),
+(3, 'Eugene', 'Customer Infrastructure Producer', 'omahmad19r@policity.ml', 330-305-4924),
+(4, 'Jacob', 'Legacy Identity Technician', 'vridwan.widanj@bvzoonm.com', 469-414-1852),
+(5, 'Madelyn', 'Legacy Configuration Analyst', 'vridwan.widanj@bvzoonm.com',574-546-3726),
+(6, 'Rudy', 'Investor Mobility Orchestrator', 'kpietra8@kubeflow.info',708-485-4138),
+(7, 'Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com',510-540-4372);
 
 INSERT INTO Administrators VALUES
-(1, 152, 'Madelyn', 'Legacy Configuration Analyst', 'vridwan.widanj@bvzoonm.com',574-546-3726 ,2),
-(2, 152, 'Rudy', 'Investor Mobility Orchestrator', 'kpietra8@kubeflow.info',708-485-4138 ,2),
-(3, 152, 'Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com',510-540-4372 ,3);
+(1, 5, 'Madelyn', 'Legacy Configuration Analyst', 'vridwan.widanj@bvzoonm.com',574-546-3726 ,2),
+(2, 6, 'Rudy', 'Investor Mobility Orchestrator', 'kpietra8@kubeflow.info',708-485-4138 ,2),
+(3, 7, 'Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com',510-540-4372 ,3),
+(4, 2,'Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', 870-324-9552, 2);
 
 INSERT INTO Departments VALUES
 (1, 'Production', 3),
@@ -274,3 +360,165 @@ INSERT INTO TaskList VALUES
 (26, 'Taj Mahal', 'See Taj Mahal',NULL ,'Emergency',1 ,4 ,3 , 2),
 (27, 'Tough Mudder', 'Compete in Tough Mudder',NULL ,'Emergency',1 ,1 ,2 , 3),
 (28, 'Nighter', 'Pull an all Nighter',NULL ,'Emergency',1 ,3 ,3 , 2);
+
+-- FUCNTIONS -----------------------------------------------------------------------------------------------------------
+
+-- FUNCTION to calculate how many tasks a worker has
+CREATE FUNCTION FnEmployeeActiveTaskReview(@WorkerAccountID VARCHAR)
+RETURNS DECIMAL
+BEGIN
+RETURN (SELECT COUNT(*) AS TaskCount FROM TaskList WHERE Status != 'Completed' AND WorkerAccountID = @WorkerAccountID)
+END;
+
+-- FUNCTION to calculate the top workers with the most completed tasks
+CREATE FUNCTION FnEmployeeTaskComparisonReview(@Status VARCHAR)
+RETURNS TABLE
+AS BEGIN
+RETURN (SELECT WorkerAccountID, Name, (SELECT WorkerAccountID, COUNT(*) FROM TaskList GROUP BY WorkerAccountID) AS TaskCount
+FROM WorkerAccounts INNER JOIN WorkerAccounts.WorkerAccountID = TaskList.WorkerAccountID
+WHERE Status = @Status
+ORDER BY TaskCount)
+END;
+
+-- PROCEDURES ----------------------------------------------------------------------------------------------------------
+
+-- PROC to insert into the TaskList table.
+CREATE PROC SpInsertTask
+@TaskName VARCHAR,
+@Description VARCHAR,
+@CompletionDate DATE,
+@Status ENUM('IceBox','Emergency','InProgress','Testing','Completed') DEFAULT 'IceBox',
+@ClaimedStatus BIT DEFAULT 0,
+@DepartmentID INT,
+@WorkerAccountID VARCHAR,
+@BusinessAccountID INT,
+@CreationDate DATE
+
+AS
+
+IF @DepartmentID IS NULL THROW 50002, 'Please fill out the DepartmentID feild.', 1;
+IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountID feild.', 1;
+
+BEGIN TRANSACTION
+BEGIN TRY
+INSERT INTO TaskList(TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate)
+VALUES (@TaskName, @Description, @CompletionDate = NULL, @Status, @DepartmentID, @WorkerAccountID, @BusinessAccountID, @CreationDate = GETDATE())
+END TRY
+COMMIT TRANSACTION
+
+BEGIN CATCH
+ROLLBACK TRANSACTION
+PRINT 'The Query should be in this format: TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID'
+END CATCH;
+
+-- PROC to insert into the Departments table.
+CREATE PROC SpInsertDepartment
+@DepartmentName VARCHAR,
+@BusinessAccountID INT,
+@CreationDate DATE
+
+AS
+
+IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountID feild.', 1;
+
+BEGIN TRANSACTION
+BEGIN TRY
+INSERT INTO Departments(DepartmentName, BusinessAccountID, CreationDate)
+VALUES (@DepartmentName, @BusinessAccountID, @CreationDate = GETDATE())
+END TRY
+COMMIT TRANSACTION
+
+BEGIN CATCH
+ROLLBACK TRANSACTION
+PRINT 'The Query should be in this format: DepartmentName, BusinessAccountID, CreationDate'
+END CATCH;
+
+-- PROC to insert into the Administrators table.
+CREATE PROC SpInsertAdministratorAccount
+@WorkerAccountID VARCHAR,
+@Name VARCHAR,
+@Role VARCHAR,
+@Email VARCHAR,
+@Phone INT,
+@BusinessAccountID INT,
+@CreationDate DATE
+
+AS
+
+IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountID feild.', 1;
+
+BEGIN TRANSACTION
+BEGIN TRY
+INSERT INTO Administrators(WorkerAccountID, Name, Role, Email, Phone, BusinessAccountID, CreationDate)
+VALUES (@WorkerAccountID, @Name, @Role, @Email, @Phone, @BusinessAccountID, @CreationDate = GETDATE())
+END TRY
+COMMIT TRANSACTION
+
+BEGIN CATCH
+ROLLBACK TRANSACTION
+PRINT 'The Query should be in this format: WorkerAccountID, Name, Role, Email, Phone, BusinessAccountID'
+END CATCH;
+
+-- PROC to insert into the WorkerAccounts table.
+CREATE PROC SpInsertWorkerAccount
+@Name VARCHAR,
+@Role VARCHAR,
+@Email VARCHAR,
+@Phone INT,
+@BusinessAccountID INT,
+@CreationDate DATE
+
+AS
+
+IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountID feild.', 1;
+
+BEGIN TRANSACTION
+BEGIN TRY
+INSERT INTO WorkerAccounts(Name, Role, Email, Phone, BusinessAccountID, CreationDate)
+VALUES (@Name, @Role, @Email, @Phone, @BusinessAccountID, @CreationDate = GETDATE())
+END TRY
+COMMIT TRANSACTION
+
+BEGIN CATCH
+ROLLBACK TRANSACTION
+PRINT 'The Query should be in this format: Name, Role, Email, Phone, BusinessAccountID'
+END CATCH;
+
+-- PROC to insert into the BusinessAccounts table.
+CREATE PROC SpInsertBusinessAccount
+@CompanyName VARCHAR,
+@Street VARCHAR,
+@City VARCHAR,
+@PostCode INT,
+@PhoneNumber INT,
+@CreationDate DATE
+
+AS
+
+BEGIN TRANSACTION
+BEGIN TRY
+INSERT INTO BusinessAccounts(CompanyName, Street, City, PostCode, PhoneNumber, CreationDate)
+VALUES (@CompanyName, @Street, @City, @PostCode, @PhoneNumber, @CreationDate = GETDATE())
+END TRY
+COMMIT TRANSACTION
+
+BEGIN CATCH
+ROLLBACK TRANSACTION
+PRINT 'The Query should be in this format: CompanyName, Street, City, PostCode, PhoneNumber'
+END CATCH;
+
+-- PROC to move all tasks with a certain WorkerAccountID to a new department
+CREATE PROC SpWorkerDepartmentChange
+@WorkerAccountID VARCHAR(50),
+@DepartmentID INT
+
+BEGIN TRANSACTION
+UPDATE TaskList
+SET DepartmentID = @DepartmentID
+WHERE WorkerAccountID = @WorkerAccountID
+COMMIT TRANSACTION
+
+BEGIN CATCH
+ROLLBACK TRANSACTION
+PRINT 'The Query should be in this format: WorkerAccountID, DepartmentID'
+END CATCH;
