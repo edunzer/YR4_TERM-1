@@ -302,12 +302,14 @@ ON TaskList (WorkerAccountID, Name)
 -- INSERTS ----------------------------------------------------------------------------------------------------------
 
 INSERT INTO BusinessAccounts VALUES
+-- BusinessAccountID | CompanyName | Street | City | PostCode | PhoneNumber
 (1, 'Garment Tech', '121 Randall Mill Drive', 'Lagrange', 60172, 508-540-6742),
 (2, 'Avid Tech', '645 Hudson Rd.', 'Downingtown', 14424, 806-440-7650),
 (3, 'Artificial Tech', '801 Lookout Lane', 'Revere', 11377, 208-469-3122),
 (4, 'Squared Shop', '7845 Old 53rd Drive', 'Monsey', 33160, 720-293-4404);
 
 INSERT INTO WorkerAccounts VALUES
+-- WorkerAccountID | Name | Role | Email | Phone | BusinessAccountID
 (1, 'Roberta', 'Future Tactics Specialist', '2amine@acmta.com', 662-237-7348),
 (2, 'Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', 870-324-9552),
 (3, 'Eugene', 'Customer Infrastructure Producer', 'omahmad19r@policity.ml', 330-305-4924),
@@ -317,12 +319,14 @@ INSERT INTO WorkerAccounts VALUES
 (7, 'Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com',510-540-4372);
 
 INSERT INTO Administrators VALUES
+-- AdministratorAccountID | WorkerAccountID | Name | Role | Email | Phone | BusinessAccountID
 (1, 5, 'Madelyn', 'Legacy Configuration Analyst', 'vridwan.widanj@bvzoonm.com',574-546-3726 ,2),
 (2, 6, 'Rudy', 'Investor Mobility Orchestrator', 'kpietra8@kubeflow.info',708-485-4138 ,2),
 (3, 7, 'Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com',510-540-4372 ,3),
 (4, 2,'Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', 870-324-9552, 2);
 
 INSERT INTO Departments VALUES
+-- DepartmentID | DepartmentName | BusinessAccountID
 (1, 'Production', 3),
 (2, 'Operations', 2),
 (3, 'HR', 2),
@@ -332,6 +336,7 @@ INSERT INTO Departments VALUES
 (7, 'Accounting and Finance', 2);
 
 INSERT INTO TaskList VALUES
+-- TaskID | TaskName | Description | CompletionDate | Status | ClaimedStatus | DepartmentID | WorkerAccountID | BusinessAccountID
 (1, 'Crocodile Show', 'Attend a Crocodile Show',NULL ,'IceBox',0 ,4 ,3 , 2),
 (2, 'English Bulldog', 'Own an English Bulldog',NULL ,'InProgress',1 ,1 ,3 , 2),
 (3, 'Models of Cars', 'Make Models of Cars',NULL ,'Emergency',1 ,3 ,3 , 2),
@@ -380,6 +385,7 @@ WHERE Status = @Status
 ORDER BY TaskCount)
 END;
 
+
 -- PROCEDURES ----------------------------------------------------------------------------------------------------------
 
 -- PROC to insert into the TaskList table.
@@ -401,14 +407,14 @@ IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountI
 
 BEGIN TRANSACTION
 BEGIN TRY
-INSERT INTO TaskList(TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate)
-VALUES (@TaskName, @Description, @CompletionDate = NULL, @Status, @DepartmentID, @WorkerAccountID, @BusinessAccountID, @CreationDate = GETDATE())
+INSERT INTO TaskList(TaskName, Description, CompletionDate, Status, ClaimedStatus, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate)
+VALUES (@TaskName, @Description, @CompletionDate = NULL, @Status, @ClaimedStatus, @DepartmentID, @WorkerAccountID, @BusinessAccountID, @CreationDate = GETDATE())
 END TRY
 COMMIT TRANSACTION
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-PRINT 'The Query should be in this format: TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID'
+THROW 50004, 'The Query should be in this format: TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID', 1;
 END CATCH;
 
 -- PROC to insert into the Departments table.
@@ -430,7 +436,7 @@ COMMIT TRANSACTION
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-PRINT 'The Query should be in this format: DepartmentName, BusinessAccountID, CreationDate'
+THROW 50004, 'The Query should be in this format: DepartmentName, BusinessAccountID, CreationDate', 1;
 END CATCH;
 
 -- PROC to insert into the Administrators table.
@@ -456,7 +462,7 @@ COMMIT TRANSACTION
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-PRINT 'The Query should be in this format: WorkerAccountID, Name, Role, Email, Phone, BusinessAccountID'
+THROW 50004, 'The Query should be in this format: WorkerAccountID, Name, Role, Email, Phone, BusinessAccountID', 1;
 END CATCH;
 
 -- PROC to insert into the WorkerAccounts table.
@@ -481,7 +487,7 @@ COMMIT TRANSACTION
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-PRINT 'The Query should be in this format: Name, Role, Email, Phone, BusinessAccountID'
+THROW 50004, 'The Query should be in this format: Name, Role, Email, Phone, BusinessAccountID', 1;
 END CATCH;
 
 -- PROC to insert into the BusinessAccounts table.
@@ -504,7 +510,7 @@ COMMIT TRANSACTION
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-PRINT 'The Query should be in this format: CompanyName, Street, City, PostCode, PhoneNumber'
+THROW 50004, 'The Query should be in this format: CompanyName, Street, City, PostCode, PhoneNumber', 1;
 END CATCH;
 
 -- PROC to move all tasks with a certain WorkerAccountID to a new department
@@ -520,5 +526,5 @@ COMMIT TRANSACTION
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-PRINT 'The Query should be in this format: WorkerAccountID, DepartmentID'
+THROW 50004, 'The Query should be in this format: WorkerAccountID, DepartmentID', 1;
 END CATCH;
