@@ -75,6 +75,17 @@ CREATE TABLE DeletedTaskList(
   DeletedBy VARCHAR(50)
 );
 
+CREATE TABLE DeletedWorkerAccounts (
+  WorkerAccountID VARCHAR(50) PRIMARY KEY,
+  Name VARCHAR(50),
+  Role VARCHAR(50),
+  Email VARCHAR(50),
+  Phone INT,
+  BusinessAccountID INT,
+  CreationDate DATE NOT NULL,
+  DeletedBy VARCHAR(50)
+);
+
 
 ALTER TABLE TaskList ADD CONSTRAINT
 DefaultDateInsert DEFAULT GETDATE() FOR CreationDate
@@ -262,6 +273,29 @@ END TRY
 BEGIN TRY
 SELECT USER() INTO vUser
 INSERT INTO DeletedTaskList(DeletedBy)
+VALUES(vUser)
+END TRY
+COMMIT TRANSACTION
+
+BEGIN CATCH
+THROW 51000, 'The records do not exist.', 1;
+ROLLBACK TRANSACTION
+END CATCH;
+
+-- TRIGGER to move WorkerAccounts to DeletedWorkerAccounts and add DeletedBy.
+CREATE TRIGGER TrgWorkerDeleteMove
+ON WorkerAccounts AFTER DELETE AS
+BEGIN TRANSACTION
+
+BEGIN TRY
+INSERT INTO DeletedWorkerAccounts (WorkerAccountID, Name, Role, Email, Phone, BusinessAccountID, CreationDate)
+SELECT WorkerAccountID, Name, Role, Email, Phone, BusinessAccountID, CreationDate
+FROM TaskList
+END TRY
+
+BEGIN TRY
+SELECT USER() INTO vUser
+INSERT INTO DeletedWorkerAccounts(DeletedBy)
 VALUES(vUser)
 END TRY
 COMMIT TRANSACTION
