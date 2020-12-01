@@ -92,88 +92,93 @@ ALTER TABLE TaskList ADD CONSTRAINT
 DefaultDateInsert DEFAULT GETDATE() FOR CreationDate
 
 
+-- INSERTS ----------------------------------------------------------------------------------------------------------
+
+INSERT INTO BusinessAccounts (CompanyName,Street,City,PostCode,PhoneNumber) VALUES
+--  | CompanyName | Street | City | PostCode | PhoneNumber | CreationDate
+('Garment Tech', '121 Randall Mill Drive', 'Lagrange', '60172', '508-540-6742'),
+('Avid Tech', '645 Hudson Rd.', 'Downingtown', '14424', '806-440-7650'),
+('Artificial Tech', '801 Lookout Lane', 'Revere', '11377', '208-469-3122'),
+('Squared Shop', '7845 Old 53rd Drive', 'Monsey', '33160', '720-293-4404');
 
 
--- SEQUENCES AND TRIGGER FOR AUTO INCREMENT -----------------------------------------------------------------------------------------
+INSERT INTO WorkerAccounts (Name,Role ,Email , PhoneNumber, BusinessAccountID) VALUES
+--  | Name | Role | Email | PhoneNumber | BusinessAccountID
+('Roberta', 'Future Tactics Specialist', '2amine@acmta.com', '662-237-7348', 2),
+('Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', '870-324-9552', 2),
+('Eugene', 'Customer Infrastructure Producer', 'omahmad19r@policity.ml', '330-305-4924', 3),
+('Jacob', 'Legacy Identity Technician', 'vridwan.widanj@bvzoonm.com', '469-414-1852', 2),
+('Madelyn', 'Legacy Configuration Analyst', 'vridwan.widanj@bvzoonm.com','574-546-3726', 3),
+('Rudy', 'Investor Mobility Orchestrator', 'kpietra8@kubeflow.info','708-485-4138', 2),
+('Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com','510-540-4372', 3);
 
--- THIS DOESNT WORK BUT I WOULD APPRECIATE IT IF YOU COULD FIGURE OUT WHY
--- THE PROBLEM IS THAT IT CANT FIND THE MAX(VALUES) SO IN THE FIRST ONE, IT CANT FIND THE MAX OF WorkerAccountID
+INSERT INTO Administrators (WorkerAccountID,Name,Role,Email,PhoneNumber,BusinessAccountID) VALUES
+--  | WorkerAccountID | Name | Role | Email | PhoneNumber | BusinessAccountID
+( 5, 'Madelyn', 'Legacy Configuration Analyst', 'vridwan.widanj@bvzoonm.com','574-546-3726' ,2),
+( 6, 'Rudy', 'Investor Mobility Orchestrator', 'kpietra8@kubeflow.info','708-485-4138' ,2),
+( 7, 'Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com','510-540-4372' ,3),
+( 2,'Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', '870-324-9552', 2);
 
-CREATE SEQUENCE WorkerAccountIDSeq
-START WITH MAX(WorkerAccountID) + 1
-INCREMENT BY 1
-CACHE 10000;
+INSERT INTO Departments (DepartmentName,BusinessAccountID) VALUES
+--  | DepartmentName | BusinessAccountID
+( 'Production', 3),
+( 'Operations', 2),
+( 'HR', 2),
+( 'Research and Development', 3),
+( 'Purchasing', 3),
+( 'Marketing', 2),
+( 'Accounting and Finance', 2);
 
-CREATE SEQUENCE BusinessAccountIDSeq
-START WITH MAX(BusinessAccountID) + 1
-INCREMENT BY 1
-CACHE 10000;
-
-CREATE SEQUENCE AdministratorAccountIDSeq
-START WITH MAX(AdministratorAccountID) + 1
-INCREMENT BY 1
-CACHE 10000;
-
-CREATE SEQUENCE DepartmentAccountIDSeq
-START WITH MAX(DepartmentAccountID) + 1
-INCREMENT BY 1
-CACHE 10000;
-
-CREATE SEQUENCE TaskIDSeq
-START WITH MAX(TaskID) + 1
-INCREMENT BY 1
-CACHE 10000;
-
--- TRIGGER to change the value of WorkerAccountID
-CREATE OR REPLACE TRIGGER TrgWorkerAccountID
-BEFORE INSERT ON WorkerAccounts
-FOR EACH ROW
-BEGIN
-:new.WorkerAccountID:=WorkerAccountIDSeq.nextval;
-END;
-
--- TRIGGER to change the value of BusinessAccountID
-CREATE OR REPLACE TRIGGER TrgBusinessAccountID
-BEFORE INSERT ON BusinessAccounts
-FOR EACH ROW
-BEGIN
-:new.BusinessAccountID:=BusinessAccountIDSeq.nextval;
-END;
-
--- TRIGGER to change the value of AdministratorAccountID
-CREATE OR REPLACE TRIGGER TrgAdministratorAccountID
-BEFORE INSERT ON Administrators
-FOR EACH ROW
-BEGIN
-:new.AdministratorAccountID:=AdministratorAccountIDSeq.nextval;
-END;
-
--- TRIGGER to change the value of DepartmentAccountID
-CREATE OR REPLACE TRIGGER TrgDepartmentAccountID
-BEFORE INSERT ON Departments
-FOR EACH ROW
-BEGIN
-:new.DepartmentAccountID:=DepartmentAccountIDSeq.nextval;
-END;
-
--- TRIGGER to change the value of TaskID
-CREATE OR REPLACE TRIGGER TrgTaskID
-BEFORE INSERT ON TaskList
-FOR EACH ROW
-BEGIN
-:new.TaskID:=TaskIDSeq.nextval;
-END;
+INSERT INTO TaskList (TaskName,Description,CompletionDate,Status,ClaimedStatus,DepartmentID,WorkerAccountID,BusinessAccountID) VALUES
+--  | TaskName | Description | CompletionDate | Status | ClaimedStatus | DepartmentID | WorkerAccountID | BusinessAccountID
+( 'Crocodile Show', 'Attend a Crocodile Show',NULL ,'IceBox',0 ,4 ,3 , 2),
+( 'English Bulldog', 'Own an English Bulldog',NULL ,'InProgress',1 ,1 ,3 , 2),
+( 'Models of Cars', 'Make Models of Cars',NULL ,'Emergency',0 ,3 ,3 , 2),
+( 'Write a Book', 'Write a Book to Each of my Children',NULL ,'Emergency',0 ,4 ,2 , 2),
+( 'Cook a Meal', 'Cook a Meal from Every Culture',NULL ,'Testing',1 ,5 ,1 , 3),
+( 'Complete a Course', 'Complete a Course in Something',NULL,'IceBox', 0,4 ,4 , 3),
+( 'Music Video', 'Appear in a Music Video',NULL ,'Emergency',0 ,4 ,3 , 2),
+( 'Tornado', 'Chase a Tornado','08-09-2012' ,'Completed',1 ,7 ,4 , 2),
+( 'First Aid', 'Learn Basic First Aid',NULL ,'IceBox',0 ,4 ,3 , 3),
+( 'Poker', 'Play in a Poker Tournament',NULL ,'InProgress',1 ,4 ,1 , 2),
+( 'Mountain', 'Climb a Mountain',NULL ,'IceBox',0 ,1 ,1 , 2),
+( 'Riot', 'Participate in a Riot',NULL ,'IceBox',0 ,4 ,3 , 2),
+( 'Home Remedies', 'Learn all About Home Remedies',NULL ,'InProgress',1 ,3 ,3 , 2),
+( 'Whole Book', 'Read a Whole Book in One Day',NULL ,'Testing',1 ,7 ,3 , 2),
+( 'Football Match', 'See a Football Match at the Nou Camp',NULL ,'Testing',1 ,1 ,3 , 2),
+( 'Care Less', 'Care Less About What People Think',NULL ,'InProgress',1 ,1 ,3 , 3),
+( 'Wig', 'Wear a Wig For a Day',NULL ,'IceBox',0 ,1 ,3 , 2),
+( 'Christmas', 'Experience a White Christmas',NULL ,'InProgress',1 ,6 ,3 , 4),
+( 'Help', 'Help in a Soup Kitchen',NULL ,'IceBox',0 ,4 ,3 , 2),
+( 'Jellyfish', 'Own a Jellyfish Aquarium', NULL ,'IceBox',0 ,7 ,3 , 3),
+( 'Inspiration', 'Make a "Wall of Inspiration" in my Room',NULL ,'Testing',1 ,3 ,2 , 3),
+( 'Chimpanzee', 'Hang Out With a Chimpanzee',NULL ,'Testing',1 ,2 ,2 , 2),
+( 'Catfish', 'Hold a Catfish','08-21-2012' ,'Completed',1 ,6 ,2 , 2),
+( 'Muffin', 'Make a Muffin Cake','02-14-2013' ,'Completed',1 ,7 ,4 , 4),
+( 'TED', 'Attend a TED Talk','03-02-2013' ,'Completed',1 ,5 ,2 , 2),
+( 'Taj Mahal', 'See Taj Mahal',NULL ,'Emergency',0 ,4 ,3 , 2),
+( 'Tough Mudder', 'Compete in Tough Mudder',NULL ,'Emergency',0 ,1 ,2 , 3),
+( 'Nighter', 'Pull an all Nighter',NULL ,'Emergency',0 ,3 ,3 , 2);
 
 
 -- TRIGGERS ----------------------------------------------------------------------------------------------------------
 
 -- TRIGGER to set the ClaimedStatus to 1 when a new task is created and has a status that is not IceBox or Emergency.
-CREATE TRIGGER TrgClaimedStatus
+CREATE TRIGGER TrgNotClaimedStatus
 ON TaskList AFTER UPDATE AS
 BEGIN
 UPDATE TaskList
 SET ClaimedStatus = 1
 WHERE Status != 'IceBox' OR Status != 'Emergency'
+END;
+
+-- TRIGGER to set the ClaimedStatus to 0 when a new task is created and has a status that is IceBox or Emergency.
+CREATE TRIGGER TrgClaimedStatus
+ON TaskList AFTER UPDATE AS
+BEGIN
+UPDATE TaskList
+SET ClaimedStatus = 0
+WHERE Status = 'IceBox' OR Status != 'Emergency'
 END;
 
 -- TRIGGER to record the CompletionDate of a task when the status is changed to Completed.
@@ -264,7 +269,74 @@ THROW 51000, 'The records do not exist.', 1;
 ROLLBACK TRANSACTION
 END CATCH;
 
+-- SEQUENCES AND TRIGGER FOR AUTO INCREMENT -----------------------------------------------------------------------------------------
+-- THIS DOESNT WORK BUT I WOULD APPRECIATE IT IF YOU COULD FIGURE OUT WHY
+-- THE PROBLEM IS THAT IT CANT FIND THE MAX(VALUES) SO IN THE FIRST ONE, IT CANT FIND THE MAX OF WorkerAccountID
 
+CREATE SEQUENCE WorkerAccountIDSeq
+START WITH MAX(WorkerAccountID) + 1
+INCREMENT BY 1
+CACHE 10000;
+
+CREATE SEQUENCE BusinessAccountIDSeq
+START WITH MAX(BusinessAccountID) + 1
+INCREMENT BY 1
+CACHE 10000;
+
+CREATE SEQUENCE AdministratorAccountIDSeq
+START WITH MAX(AdministratorAccountID) + 1
+INCREMENT BY 1
+CACHE 10000;
+
+CREATE SEQUENCE DepartmentAccountIDSeq
+START WITH MAX(DepartmentAccountID) + 1
+INCREMENT BY 1
+CACHE 10000;
+
+CREATE SEQUENCE TaskIDSeq
+START WITH MAX(TaskID) + 1
+INCREMENT BY 1
+CACHE 10000;
+
+-- TRIGGER to change the value of WorkerAccountID
+CREATE OR REPLACE TRIGGER TrgWorkerAccountID
+BEFORE INSERT ON WorkerAccounts
+FOR EACH ROW
+BEGIN
+:new.WorkerAccountID:=WorkerAccountIDSeq.nextval;
+END;
+
+-- TRIGGER to change the value of BusinessAccountID
+CREATE OR REPLACE TRIGGER TrgBusinessAccountID
+BEFORE INSERT ON BusinessAccounts
+FOR EACH ROW
+BEGIN
+:new.BusinessAccountID:=BusinessAccountIDSeq.nextval;
+END;
+
+-- TRIGGER to change the value of AdministratorAccountID
+CREATE OR REPLACE TRIGGER TrgAdministratorAccountID
+BEFORE INSERT ON Administrators
+FOR EACH ROW
+BEGIN
+:new.AdministratorAccountID:=AdministratorAccountIDSeq.nextval;
+END;
+
+-- TRIGGER to change the value of DepartmentAccountID
+CREATE OR REPLACE TRIGGER TrgDepartmentAccountID
+BEFORE INSERT ON Departments
+FOR EACH ROW
+BEGIN
+:new.DepartmentAccountID:=DepartmentAccountIDSeq.nextval;
+END;
+
+-- TRIGGER to change the value of TaskID
+CREATE OR REPLACE TRIGGER TrgTaskID
+BEFORE INSERT ON TaskList
+FOR EACH ROW
+BEGIN
+:new.TaskID:=TaskIDSeq.nextval;
+END;
 
 -- INDEXES ----------------------------------------------------------------------------------------------------------
 
@@ -291,74 +363,6 @@ WHERE Status = 'IceBox'
 CREATE INDEX IdxWorkers
 ON WorkerAccounts (WorkerAccountID, Name)
 
-
--- INSERTS ----------------------------------------------------------------------------------------------------------
-
-INSERT INTO BusinessAccounts (CompanyName,Street,City,PostCode,PhoneNumber) VALUES
---  | CompanyName | Street | City | PostCode | PhoneNumber | CreationDate
-('Garment Tech', '121 Randall Mill Drive', 'Lagrange', '60172', '508-540-6742'),
-('Avid Tech', '645 Hudson Rd.', 'Downingtown', '14424', '806-440-7650'),
-('Artificial Tech', '801 Lookout Lane', 'Revere', '11377', '208-469-3122'),
-('Squared Shop', '7845 Old 53rd Drive', 'Monsey', '33160', '720-293-4404');
-
-
-INSERT INTO WorkerAccounts (Name,Role ,Email , PhoneNumber, BusinessAccountID) VALUES
---  | Name | Role | Email | PhoneNumber | BusinessAccountID
-('Roberta', 'Future Tactics Specialist', '2amine@acmta.com', '662-237-7348', 2),
-('Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', '870-324-9552', 2),
-('Eugene', 'Customer Infrastructure Producer', 'omahmad19r@policity.ml', '330-305-4924', 3),
-('Jacob', 'Legacy Identity Technician', 'vridwan.widanj@bvzoonm.com', '469-414-1852', 2),
-('Madelyn', 'Legacy Configuration Analyst', 'vridwan.widanj@bvzoonm.com','574-546-3726', 3),
-('Rudy', 'Investor Mobility Orchestrator', 'kpietra8@kubeflow.info','708-485-4138', 2),
-('Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com','510-540-4372', 3);
-
-INSERT INTO Administrators (WorkerAccountID,Name,Role,Email,PhoneNumber,BusinessAccountID) VALUES
---  | WorkerAccountID | Name | Role | Email | PhoneNumber | BusinessAccountID
-( 5, 'Madelyn', 'Legacy Configuration Analyst', 'vridwan.widanj@bvzoonm.com','574-546-3726' ,2),
-( 6, 'Rudy', 'Investor Mobility Orchestrator', 'kpietra8@kubeflow.info','708-485-4138' ,2),
-( 7, 'Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com','510-540-4372' ,3),
-( 2,'Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', '870-324-9552', 2);
-
-INSERT INTO Departments (DepartmentName,BusinessAccountID) VALUES
---  | DepartmentName | BusinessAccountID
-( 'Production', 3),
-( 'Operations', 2),
-( 'HR', 2),
-( 'Research and Development', 3),
-( 'Purchasing', 3),
-( 'Marketing', 2),
-( 'Accounting and Finance', 2);
-
-INSERT INTO TaskList (TaskName,Description,CompletionDate,Status,ClaimedStatus,DepartmentID,WorkerAccountID,BusinessAccountID) VALUES
---  | TaskName | Description | CompletionDate | Status | ClaimedStatus | DepartmentID | WorkerAccountID | BusinessAccountID
-( 'Crocodile Show', 'Attend a Crocodile Show',NULL ,'IceBox',0 ,4 ,3 , 2),
-( 'English Bulldog', 'Own an English Bulldog',NULL ,'InProgress',1 ,1 ,3 , 2),
-( 'Models of Cars', 'Make Models of Cars',NULL ,'Emergency',1 ,3 ,3 , 2),
-( 'Write a Book', 'Write a Book to Each of my Children',NULL ,'Emergency',1 ,4 ,2 , 2),
-( 'Cook a Meal', 'Cook a Meal from Every Culture',NULL ,'Testing',1 ,5 ,1 , 3),
-( 'Complete a Course', 'Complete a Course in Something',NULL,'IceBox', 0,4 ,4 , 3),
-( 'Music Video', 'Appear in a Music Video',NULL ,'Emergency',1 ,4 ,3 , 2),
-( 'Tornado', 'Chase a Tornado','08-09-2012' ,'Completed',1 ,7 ,4 , 2),
-( 'First Aid', 'Learn Basic First Aid',NULL ,'IceBox',0 ,4 ,3 , 3),
-( 'Poker', 'Play in a Poker Tournament',NULL ,'InProgress',1 ,4 ,1 , 2),
-( 'Mountain', 'Climb a Mountain',NULL ,'IceBox',0 ,1 ,1 , 2),
-( 'Riot', 'Participate in a Riot',NULL ,'IceBox',0 ,4 ,3 , 2),
-( 'Home Remedies', 'Learn all About Home Remedies',NULL ,'InProgress',1 ,3 ,3 , 2),
-( 'Whole Book', 'Read a Whole Book in One Day',NULL ,'Testing',1 ,7 ,3 , 2),
-( 'Football Match', 'See a Football Match at the Nou Camp',NULL ,'Testing',1 ,1 ,3 , 2),
-( 'Care Less', 'Care Less About What People Think',NULL ,'InProgress',1 ,1 ,3 , 3),
-( 'Wig', 'Wear a Wig For a Day',NULL ,'IceBox',0 ,1 ,3 , 2),
-( 'Christmas', 'Experience a White Christmas',NULL ,'InProgress',1 ,6 ,3 , 4),
-( 'Help', 'Help in a Soup Kitchen',NULL ,'IceBox',0 ,4 ,3 , 2),
-( 'Jellyfish', 'Own a Jellyfish Aquarium', NULL ,'IceBox',0 ,7 ,3 , 3),
-( 'Inspiration', 'Make a "Wall of Inspiration" in my Room',NULL ,'Testing',1 ,3 ,2 , 3),
-( 'Chimpanzee', 'Hang Out With a Chimpanzee',NULL ,'Testing',1 ,2 ,2 , 2),
-( 'Catfish', 'Hold a Catfish','08-21-2012' ,'Completed',1 ,6 ,2 , 2),
-( 'Muffin', 'Make a Muffin Cake','02-14-2013' ,'Completed',1 ,7 ,4 , 4),
-( 'TED', 'Attend a TED Talk','03-02-2013' ,'Completed',1 ,5 ,2 , 2),
-( 'Taj Mahal', 'See Taj Mahal',NULL ,'Emergency',1 ,4 ,3 , 2),
-( 'Tough Mudder', 'Compete in Tough Mudder',NULL ,'Emergency',1 ,1 ,2 , 3),
-( 'Nighter', 'Pull an all Nighter',NULL ,'Emergency',1 ,3 ,3 , 2);
 
 -- FUCNTIONS -----------------------------------------------------------------------------------------------------------
 
@@ -395,6 +399,7 @@ CREATE PROC SpInsertTask
 
 AS
 
+IF @TaskName IS NULL THROW 50001, 'Please fill out the TaskName feild.', 1;
 IF @DepartmentID IS NULL THROW 50002, 'Please fill out the DepartmentID feild.', 1;
 IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountID feild.', 1;
 
@@ -445,6 +450,7 @@ CREATE PROC SpInsertAdministratorAccount
 
 AS
 
+IF @WorkerAccountID IS NULL THROW 50005, 'Please fill out the WorkerAccountID feild.', 1;
 IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountID feild.', 1;
 
 BEGIN TRANSACTION
@@ -470,6 +476,7 @@ CREATE PROC SpInsertWorkerAccount
 
 AS
 
+IF @Name IS NULL THROW 50006, 'Please fill out the Name feild.', 1;
 IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountID feild.', 1;
 
 BEGIN TRANSACTION
@@ -496,6 +503,8 @@ CREATE PROC SpInsertBusinessAccount
 
 AS
 
+IF @CompanyName IS NULL THROW 50007, 'Please fill out the CompanyName feild.', 1;
+
 BEGIN TRANSACTION
 BEGIN TRY
 INSERT INTO BusinessAccounts(CompanyName, Street, City, PostCode, PhoneNumber, CreationDate)
@@ -512,6 +521,11 @@ END CATCH;
 CREATE PROC SpWorkerDepartmentChange
 @WorkerAccountID VARCHAR(50),
 @DepartmentID INT
+
+AS
+
+IF @WorkerAccountID IS NULL THROW 50005, 'Please fill out the WorkerAccountID feild.', 1;
+IF @DepartmentID IS NULL THROW 50002, 'Please fill out the DepartmentID feild.', 1;
 
 BEGIN TRANSACTION
 BEGIN TRY
