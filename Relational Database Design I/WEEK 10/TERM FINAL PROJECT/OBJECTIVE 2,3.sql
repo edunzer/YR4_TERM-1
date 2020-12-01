@@ -95,8 +95,9 @@ DefaultDateInsert DEFAULT GETDATE() FOR CreationDate
 
 
 -- SEQUENCES AND TRIGGER FOR AUTO INCREMENT -----------------------------------------------------------------------------------------
+
 -- THIS DOESNT WORK BUT I WOULD APPRECIATE IT IF YOU COULD FIGURE OUT WHY
--- THE PROBLEM IS THAT IT CANT FIND THE MAX(VALUES) SO IN THE FIRST ONE, IT CANT FIND WorkerAccountID
+-- THE PROBLEM IS THAT IT CANT FIND THE MAX(VALUES) SO IN THE FIRST ONE, IT CANT FIND THE MAX OF WorkerAccountID
 
 CREATE SEQUENCE WorkerAccountIDSeq
 START WITH MAX(WorkerAccountID) + 1
@@ -163,12 +164,14 @@ BEGIN
 :new.TaskID:=TaskIDSeq.nextval;
 END;
 
+
 -- TRIGGERS ----------------------------------------------------------------------------------------------------------
 
 -- TRIGGER to set the ClaimedStatus to 1 when a new task is created and has a status that is not IceBox or Emergency.
 CREATE TRIGGER TrgClaimedStatus
 ON TaskList AFTER UPDATE AS
 BEGIN
+UPDATE TaskList
 SET ClaimedStatus = 1
 WHERE Status != 'IceBox' OR Status != 'Emergency'
 END;
@@ -292,7 +295,7 @@ ON WorkerAccounts (WorkerAccountID, Name)
 -- INSERTS ----------------------------------------------------------------------------------------------------------
 
 INSERT INTO BusinessAccounts (CompanyName,Street,City,PostCode,PhoneNumber) VALUES
--- BusinessAccountID | CompanyName | Street | City | PostCode | PhoneNumber | CreationDate
+--  | CompanyName | Street | City | PostCode | PhoneNumber | CreationDate
 ('Garment Tech', '121 Randall Mill Drive', 'Lagrange', '60172', '508-540-6742'),
 ('Avid Tech', '645 Hudson Rd.', 'Downingtown', '14424', '806-440-7650'),
 ('Artificial Tech', '801 Lookout Lane', 'Revere', '11377', '208-469-3122'),
@@ -300,7 +303,7 @@ INSERT INTO BusinessAccounts (CompanyName,Street,City,PostCode,PhoneNumber) VALU
 
 
 INSERT INTO WorkerAccounts (Name,Role ,Email , PhoneNumber, BusinessAccountID) VALUES
--- WorkerAccountID | Name | Role | Email | PhoneNumber | BusinessAccountID
+--  | Name | Role | Email | PhoneNumber | BusinessAccountID
 ('Roberta', 'Future Tactics Specialist', '2amine@acmta.com', '662-237-7348', 2),
 ('Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', '870-324-9552', 2),
 ('Eugene', 'Customer Infrastructure Producer', 'omahmad19r@policity.ml', '330-305-4924', 3),
@@ -310,14 +313,14 @@ INSERT INTO WorkerAccounts (Name,Role ,Email , PhoneNumber, BusinessAccountID) V
 ('Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com','510-540-4372', 3);
 
 INSERT INTO Administrators (WorkerAccountID,Name,Role,Email,PhoneNumber,BusinessAccountID) VALUES
--- AdministratorAccountID | WorkerAccountID | Name | Role | Email | PhoneNumber | BusinessAccountID
+--  | WorkerAccountID | Name | Role | Email | PhoneNumber | BusinessAccountID
 ( 5, 'Madelyn', 'Legacy Configuration Analyst', 'vridwan.widanj@bvzoonm.com','574-546-3726' ,2),
 ( 6, 'Rudy', 'Investor Mobility Orchestrator', 'kpietra8@kubeflow.info','708-485-4138' ,2),
 ( 7, 'Patrick', 'National Group Coordinator', 'jhassen_44z@twitchmasters.com','510-540-4372' ,3),
 ( 2,'Sarah', 'Human Resonance Representative', 'wsevdam35-55x@acmta.com', '870-324-9552', 2);
 
 INSERT INTO Departments (DepartmentName,BusinessAccountID) VALUES
--- DepartmentID | DepartmentName | BusinessAccountID
+--  | DepartmentName | BusinessAccountID
 ( 'Production', 3),
 ( 'Operations', 2),
 ( 'HR', 2),
@@ -327,7 +330,7 @@ INSERT INTO Departments (DepartmentName,BusinessAccountID) VALUES
 ( 'Accounting and Finance', 2);
 
 INSERT INTO TaskList (TaskName,Description,CompletionDate,Status,ClaimedStatus,DepartmentID,WorkerAccountID,BusinessAccountID) VALUES
--- TaskID | TaskName | Description | CompletionDate | Status | ClaimedStatus | DepartmentID | WorkerAccountID | BusinessAccountID
+--  | TaskName | Description | CompletionDate | Status | ClaimedStatus | DepartmentID | WorkerAccountID | BusinessAccountID
 ( 'Crocodile Show', 'Attend a Crocodile Show',NULL ,'IceBox',0 ,4 ,3 , 2),
 ( 'English Bulldog', 'Own an English Bulldog',NULL ,'InProgress',1 ,1 ,3 , 2),
 ( 'Models of Cars', 'Make Models of Cars',NULL ,'Emergency',1 ,3 ,3 , 2),
@@ -402,7 +405,6 @@ VALUES (@TaskName, @Description, @CompletionDate = NULL, @Status, @ClaimedStatus
 COMMIT TRANSACTION
 END TRY
 
-
 BEGIN CATCH
 ROLLBACK TRANSACTION
 THROW 50004, 'The Query should be in this format: TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID', 1;
@@ -451,7 +453,6 @@ INSERT INTO Administrators(WorkerAccountID, Name, Role, Email, PhoneNumber, Busi
 VALUES (@WorkerAccountID, @Name, @Role, @Email, @PhoneNumber, @BusinessAccountID, @CreationDate = GETDATE())
 COMMIT TRANSACTION
 END TRY
-
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
@@ -502,7 +503,6 @@ VALUES (@CompanyName, @Street, @City, @PostCode, @PhoneNumber, @CreationDate = G
 COMMIT TRANSACTION
 END TRY
 
-
 BEGIN CATCH
 ROLLBACK TRANSACTION
 THROW 50004, 'The Query should be in this format: CompanyName, Street, City, PostCode, PhoneNumber', 1;
@@ -532,41 +532,34 @@ CREATE VIEW TaskByDepartment AS
 SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate
 FROM TaskList
 
-
 CREATE VIEW EmployeeByDepartment AS
 SELECT WorkerAccountID, Name, Role, Email, PhoneNumber, BusinessAccountID, CreationDate
 FROM WorkerAccounts
-
 
 CREATE VIEW IceBox AS
 SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate
 FROM TaskList
 WHERE Status = 'IceBox'
 
-
 CREATE VIEW Emergency AS
 SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate
 FROM TaskList
 WHERE Status = 'Emergency'
-
 
 CREATE VIEW InProgress AS
 SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate
 FROM TaskList
 WHERE Status = 'InProgress'
 
-
 CREATE VIEW Testing AS
 SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate
 FROM TaskList
 WHERE Status = 'Testing'
 
-
 CREATE VIEW Completed AS
 SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate
 FROM TaskList
 WHERE Status = 'Completed'
-
 
 CREATE VIEW EmployeeTaskCompletionReview AS
 SELECT FnEmployeeTaskCompletionReview('Completed')
