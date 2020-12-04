@@ -55,6 +55,7 @@ CREATE TABLE TaskList(
 );
 
 CREATE TABLE TaskListAuditLog(
+  Type VARCHAR(50) NOT NULL,
   TaskID INT PRIMARY KEY,
   CreatedBy VARCHAR(50) NOT NULL,
   CreationDate DATE NOT NULL,
@@ -185,43 +186,35 @@ END;
 CREATE TRIGGER TrgCompletionDate
 ON TaskList AFTER UPDATE AS
 BEGIN
-DECLARE @DateTime = GETDATE();
-UPDATE A
-SET CompletionDate = CONVERT(DATE, @DateTime)
-FROM TaskList AS A
+UPDATE TaskList
+SET CompletionDate = GETDATE()
 WHERE Status = 'Completed'
 END;
 
 -- TRIGGER to record the TaskID, DeletedDate, and who deleted said task. Inserts into TaskListAuditLog table
 CREATE TRIGGER TrgTaskDelete
-ON TaskList AFTER DELETE AS
+ON TaskList FOR DELETE AS
 BEGIN
-DECLARE vUser VARCHAR(50);
-SELECT USER() INTO vUser;
-INSERT INTO TaskListAuditLog
-(TaskID,DeletedDate,DeletedBy)
-VALUES(OLD.TaskID, SYSDATE(),vUser );
+INSERT INTO TaskListAuditLog(Type,TaskID,DeletedDate,CreatedBy)
+SELECT Type = 'DELETE',TaskID,CreationDate,CreatedBy = USER_NAME(USER_ID()) FROM INSERTED
 END;
 
 -- TRIGGER to record the TaskID, CreationDate, and who created said task. Inserts into TaskListAuditLog table
 CREATE TRIGGER TrgTaskCreate
-ON TaskList AFTER INSERT AS
+ON TaskList FOR INSERT AS
 BEGIN
-DECLARE vUser VARCHAR(50);
-SELECT USER() INTO vUser;
-INSERT INTO TaskListAuditLog
-(TaskID,CreationDate,CreatedBy)
-VALUES(NEW.TaskID, SYSDATE(),vUser );
+INSERT INTO TaskListAuditLog(Type,TaskID,CreationDate,CreatedBy)
+SELECT Type = 'CREATED',TaskID,CreationDate,CreatedBy = USER_NAME(USER_ID()) FROM INSERTED
 END;
 
 -- TRIGGER to record who created a task.
 CREATE TRIGGER TrgWorkerTaskCreation
 BEFORE INSERT ON TaskList FOR EACH ROW
 BEGIN
-SELECT USER() INTO vUser;
-INSERT INTO TaskList(WorkerAccountID)
-VALUES(vUser);
+UPDATE TaskList(WorkerAccountID)
+SET WorkerAccountID = USER_NAME(USER_ID())
 END;
+
 
 -- TRIGGER to move task to DeletedTaskList and add DeletedBy.
 CREATE TRIGGER TrgTaskDeleteMove
@@ -234,12 +227,16 @@ SELECT TaskID, TaskName, Description, CompletionDate, Status, DepartmentID, Work
 FROM TaskList
 END TRY
 
+BEGIN CATCH
+THROW 51000, 'The records do not exist.', 1;
+ROLLBACK TRANSACTION
+END CATCH;
+
 BEGIN TRY
-SELECT USER() INTO vUser
-INSERT INTO DeletedTaskList(DeletedBy)
-VALUES(vUser)
-END TRY
+UPDATE DeletedTaskList(DeletedBy)
+SET DeletedBy = USER_NAME(USER_ID())
 COMMIT TRANSACTION
+END TRY
 
 BEGIN CATCH
 THROW 51000, 'The records do not exist.', 1;
@@ -254,15 +251,19 @@ BEGIN TRANSACTION
 BEGIN TRY
 INSERT INTO DeletedWorkerAccounts (WorkerAccountID, Name, Role, Email, PhoneNumber, BusinessAccountID, CreationDate)
 SELECT WorkerAccountID, Name, Role, Email, PhoneNumber, BusinessAccountID, CreationDate
-FROM TaskList
+FROM WorkerAccounts
 END TRY
 
+BEGIN CATCH
+THROW 51000, 'The records do not exist.', 1;
+ROLLBACK TRANSACTION
+END CATCH;
+
 BEGIN TRY
-SELECT USER() INTO vUser
-INSERT INTO DeletedWorkerAccounts(DeletedBy)
-VALUES(vUser)
-END TRY
+UPDATE DeletedWorkerAccounts(DeletedBy)
+SET DeletedBy = USER_NAME(USER_ID())
 COMMIT TRANSACTION
+END TRY
 
 BEGIN CATCH
 THROW 51000, 'The records do not exist.', 1;
@@ -270,7 +271,7 @@ ROLLBACK TRANSACTION
 END CATCH;
 
 -- SEQUENCES AND TRIGGER FOR AUTO INCREMENT -----------------------------------------------------------------------------------------
--- THIS DOESNT WORK BUT I WOULD APPRECIATE IT IF YOU COULD FIGURE OUT WHY
+-- THIS DOESNT WORK BUT I WOULD APPRECIATE IT IF YOU COULD FIGURE OUT WHY (DOESNT HAVE TO WORK THOUGH JUST PUT IT IN FOR FUN TO TRY)
 -- THE PROBLEM IS THAT IT CANT FIND THE MAX(VALUES) SO IN THE FIRST ONE, IT CANT FIND THE MAX OF WorkerAccountID
 
 CREATE SEQUENCE WorkerAccountIDSeq
@@ -405,14 +406,17 @@ IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountI
 
 BEGIN TRANSACTION
 BEGIN TRY
+SET @CreationDate = GETDATE();
+SET @CompletionDate = NULL;
+
 INSERT INTO TaskList(TaskName, Description, CompletionDate, Status, ClaimedStatus, DepartmentID, WorkerAccountID, BusinessAccountID, CreationDate)
-VALUES (@TaskName, @Description, @CompletionDate = NULL, @Status, @ClaimedStatus, @DepartmentID, @WorkerAccountID, @BusinessAccountID, @CreationDate = GETDATE())
+VALUES (@TaskName, @Description, @CompletionDate, @Status, @ClaimedStatus, @DepartmentID, @WorkerAccountID, @BusinessAccountID, @CreationDate)
 COMMIT TRANSACTION
 END TRY
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-THROW 50004, 'The Query should be in this format: TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID', 1;
+RAISERROR (50004,-1,-1, 'The Query should be in this format: TaskName, Description, CompletionDate, Status, DepartmentID, WorkerAccountID, BusinessAccountID', 1);
 END CATCH;
 
 
@@ -428,14 +432,15 @@ IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountI
 
 BEGIN TRANSACTION
 BEGIN TRY
+SET @CreationDate = GETDATE()
 INSERT INTO Departments(DepartmentName, BusinessAccountID, CreationDate)
-VALUES (@DepartmentName, @BusinessAccountID, @CreationDate = GETDATE())
+VALUES (@DepartmentName, @BusinessAccountID, @CreationDate)
 COMMIT TRANSACTION
 END TRY
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-THROW 50004, 'The Query should be in this format: DepartmentName, BusinessAccountID, CreationDate', 1;
+RAISERROR (50004,-1,-1, 'The Query should be in this format: DepartmentName, BusinessAccountID, CreationDate', 1);
 END CATCH;
 
 -- PROC to insert into the Administrators table.
@@ -455,14 +460,15 @@ IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountI
 
 BEGIN TRANSACTION
 BEGIN TRY
+SET @CreationDate = GETDATE()
 INSERT INTO Administrators(WorkerAccountID, Name, Role, Email, PhoneNumber, BusinessAccountID, CreationDate)
-VALUES (@WorkerAccountID, @Name, @Role, @Email, @PhoneNumber, @BusinessAccountID, @CreationDate = GETDATE())
+VALUES (@WorkerAccountID, @Name, @Role, @Email, @PhoneNumber, @BusinessAccountID, @CreationDate)
 COMMIT TRANSACTION
 END TRY
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-THROW 50004, 'The Query should be in this format: WorkerAccountID, Name, Role, Email, PhoneNumber, BusinessAccountID', 1;
+RAISERROR (50004,-1,-1, 'The Query should be in this format: WorkerAccountID, Name, Role, Email, PhoneNumber, BusinessAccountID', 1);
 END CATCH;
 
 -- PROC to insert into the WorkerAccounts table.
@@ -481,15 +487,16 @@ IF @BusinessAccountID IS NULL THROW 50003, 'Please fill out the BusinessAccountI
 
 BEGIN TRANSACTION
 BEGIN TRY
+SET @CreationDate = GETDATE()
 INSERT INTO WorkerAccounts(Name, Role, Email, PhoneNumber, BusinessAccountID, CreationDate)
-VALUES (@Name, @Role, @Email, @PhoneNumber, @BusinessAccountID, @CreationDate = GETDATE())
+VALUES (@Name, @Role, @Email, @PhoneNumber, @BusinessAccountID, @CreationDate)
 COMMIT TRANSACTION
 END TRY
 
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-THROW 50004, 'The Query should be in this format: Name, Role, Email, PhoneNumber, BusinessAccountID', 1;
+RAISERROR (50004,-1,-1, 'The Query should be in this format: Name, Role, Email, PhoneNumber, BusinessAccountID', 1);
 END CATCH;
 
 -- PROC to insert into the BusinessAccounts table.
@@ -507,14 +514,15 @@ IF @CompanyName IS NULL THROW 50007, 'Please fill out the CompanyName feild.', 1
 
 BEGIN TRANSACTION
 BEGIN TRY
+SET @CreationDate = GETDATE()
 INSERT INTO BusinessAccounts(CompanyName, Street, City, PostCode, PhoneNumber, CreationDate)
-VALUES (@CompanyName, @Street, @City, @PostCode, @PhoneNumber, @CreationDate = GETDATE())
+VALUES (@CompanyName, @Street, @City, @PostCode, @PhoneNumber, @CreationDate)
 COMMIT TRANSACTION
 END TRY
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-THROW 50004, 'The Query should be in this format: CompanyName, Street, City, PostCode, PhoneNumber', 1;
+RAISERROR (50004,-1,-1, 'The Query should be in this format: CompanyName, Street, City, PostCode, PhoneNumber', 1);
 END CATCH;
 
 -- PROC to move all tasks with a certain WorkerAccountID to a new department
@@ -537,7 +545,7 @@ END TRY
 
 BEGIN CATCH
 ROLLBACK TRANSACTION
-THROW 50004, 'The Query should be in this format: WorkerAccountID, DepartmentID', 1;
+RAISERROR (50004,-1,-1, 'The Query should be in this format: WorkerAccountID, DepartmentID', 1);
 END CATCH;
 
 -- VIEWS ----------------------------------------------------------------------------------------------------------
