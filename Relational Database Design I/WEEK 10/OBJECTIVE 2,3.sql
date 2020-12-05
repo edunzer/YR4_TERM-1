@@ -3,7 +3,7 @@ USE TermProjectDatabase;
 -- TABLES ----------------------------------------------------------------------------------------------------------
 
 CREATE TABLE BusinessAccounts (
-  BusinessAccountID INT PRIMARY KEY IDENTITY(1,1),
+  BusinessAccountID INT PRIMARY KEY IDENTITY(1,1), 
   CompanyName VARCHAR(50),
   Street VARCHAR(50),
   City VARCHAR(50),
@@ -269,6 +269,33 @@ BEGIN CATCH
 THROW 51000, 'The records do not exist.', 1;
 ROLLBACK TRANSACTION
 END CATCH;
+
+-- SEQUENCE -----------------------------------------------------------------------------------------
+
+CREATE SEQUENCE WorkerAccountIDSeq
+START WITH 1
+INCREMENT BY 1
+CACHE 10000;
+
+CREATE SEQUENCE BusinessAccountIDSeq
+START WITH 1
+INCREMENT BY 1
+CACHE 10000;
+
+CREATE SEQUENCE AdministratorAccountIDSeq
+START WITH 1
+INCREMENT BY 1
+CACHE 10000;
+
+CREATE SEQUENCE DepartmentAccountIDSeq
+START WITH 1
+INCREMENT BY 1
+CACHE 10000;
+
+CREATE SEQUENCE TaskIDSeq
+START WITH 1
+INCREMENT BY 1
+CACHE 10000;
 
 -- SEQUENCES AND TRIGGER FOR AUTO INCREMENT -----------------------------------------------------------------------------------------
 -- THIS DOESNT WORK BUT I WOULD APPRECIATE IT IF YOU COULD FIGURE OUT WHY (DOESNT HAVE TO WORK THOUGH JUST PUT IT IN FOR FUN TO TRY)
